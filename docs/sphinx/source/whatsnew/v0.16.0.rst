@@ -18,7 +18,7 @@ Breaking Changes
   (:pull:`2788`)
 * Removed private function :py:func:`pvlib.irradiance._liujordan`.
   (:issue:`2764`, :pull:`2766`)
-* Removed deprecated iotools aliases :py:func:`pvlib.iotools.parse_bsrn`,
+* Removed deprecated iotools functions :py:func:`pvlib.iotools.parse_bsrn`,
   :py:func:`pvlib.iotools.parse_epw`, and
   :py:func:`pvlib.iotools.parse_cams`. Use
   :py:func:`pvlib.iotools.read_bsrn`, :py:func:`pvlib.iotools.read_epw`,
