@@ -20,7 +20,8 @@ from .conftest import requires_ephem
 
 
 def test_location_required():
-    Location(32.2, -111)
+    loc = Location(32.2, -111)
+    assert loc.tz == 'America/Phoenix'
 
 
 def test_location_all():
@@ -57,10 +58,12 @@ def test_location_tz(tz, tz_expected):
 def test_location_tz_update():
     loc = Location(32.2, -111, -11)
     assert loc.tz == 'Etc/GMT+11'
+    assert str(loc._zoneinfo) == 'Etc/GMT+11'
 
     # Updating Location's tz updates read-only time-zone attributes.
     loc.tz = 7
     assert loc.tz == 'Etc/GMT-7'
+    assert str(loc._zoneinfo) == 'Etc/GMT-7'
 
 
 @pytest.mark.parametrize(
@@ -396,6 +399,66 @@ def test_location_lookup_altitude(mocker):
     tus = Location(32.2, -111, 'US/Arizona')
     location.lookup_altitude.assert_called_once_with(32.2, -111)
     assert tus.altitude == location.lookup_altitude(32.2, -111)
+
+
+@pytest.mark.parametrize(
+    'latitude,longitude', [
+        pytest.param(-90, -180, id='min-bounds'),
+        pytest.param(90, 180, id='max-bounds'),
+    ]
+)
+def test_location_coordinate_bounds(latitude, longitude):
+    loc = Location(latitude, longitude, tz='UTC', altitude=0)
+    assert loc.latitude == latitude
+    assert loc.longitude == longitude
+
+
+@pytest.mark.parametrize(
+    'latitude,longitude', [
+        pytest.param(-90.1, 0, id='latitude-too-low'),
+        pytest.param(90.1, 0, id='latitude-too-high'),
+        pytest.param(0, -180.1, id='longitude-too-low'),
+        pytest.param(0, 180.1, id='longitude-too-high'),
+    ]
+)
+def test_location_invalid_coordinate_range(latitude, longitude):
+    with pytest.raises(ValueError):
+        Location(latitude, longitude, tz='UTC', altitude=0)
+
+
+@pytest.mark.parametrize('value,name', [
+    pytest.param('32.2', 'latitude', id='latitude-string'),
+    pytest.param(float('nan'), 'latitude', id='latitude-nan'),
+    pytest.param(float('inf'), 'longitude', id='longitude-inf'),
+])
+def test_location_invalid_coordinate_type_or_finiteness(value, name):
+    kwargs = {'latitude': 32.2, 'longitude': -111, 'tz': 'UTC', 'altitude': 0}
+    kwargs[name] = value
+    with pytest.raises((TypeError, ValueError)):
+        Location(**kwargs)
+
+
+@pytest.mark.parametrize('altitude', [-430, 8848])
+def test_location_altitude_bounds(altitude):
+    loc = Location(32.2, -111, tz='UTC', altitude=altitude)
+    assert loc.altitude == altitude
+
+
+@pytest.mark.parametrize('altitude', [-500, 10000])
+def test_location_invalid_altitude_range(altitude):
+    with pytest.raises(ValueError):
+        Location(32.2, -111, tz='UTC', altitude=altitude)
+
+
+def test_location_derived_tz_when_none():
+    loc = Location(39.742476, -105.1786, altitude=1830.14)
+    assert loc.tz == 'America/Denver'
+
+
+def test_location_dataclass_equality():
+    loc_1 = Location(32.2, -111, 'US/Arizona', 700, 'Tucson')
+    loc_2 = Location(32.2, -111, 'US/Arizona', 700, 'Tucson')
+    assert loc_1 == loc_2
 
 
 @fail_on_pvlib_version('0.17.0')
