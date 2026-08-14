@@ -242,11 +242,11 @@ def golden_location():
 
 @pytest.fixture()
 def golden_tz():
-    return zoneinfo.ZoneInfo('America/Denver')
+    return 'America/Denver'
 
 @pytest.fixture()
 def golden_mst_tz():
-    return zoneinfo.ZoneInfo('MST')
+    return 'MST'
 
 
 @pytest.fixture()
